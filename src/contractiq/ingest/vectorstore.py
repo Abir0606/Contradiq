@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from contractiq.config import Settings
 from contractiq.ingest.chunker import Chunk
+
+if TYPE_CHECKING:
+    from contractiq.ingest.sparse import BM25SparseEncoder
 
 
 def sanitize_metadata(meta: dict, max_str_len: int = 800) -> dict:
@@ -26,7 +31,8 @@ def ensure_index(settings: Settings) -> None:
     if settings.index_name in existing:
         desc = pc.describe_index(settings.index_name)
         dim = getattr(desc, "dimension", None) or desc.get("dimension")
-        if dim != settings.embedding_dim:
+        metric = getattr(desc, "metric", None) or desc.get("metric")
+        if dim != settings.embedding_dim or metric != settings.metric:
             pc.delete_index(settings.index_name)
             existing.discard(settings.index_name)
             time.sleep(2)
@@ -34,7 +40,7 @@ def ensure_index(settings: Settings) -> None:
         pc.create_index(
             name=settings.index_name,
             dimension=settings.embedding_dim,
-            metric="cosine",
+            metric=settings.metric,
             spec=ServerlessSpec(cloud=settings.cloud, region=settings.region),
         )
         while True:
@@ -82,6 +88,42 @@ def upsert_chunks(
             }
             for record, values in zip(batch, vectors_list)
         ]
+        index.upsert(vectors=vectors, namespace=namespace)
+        total += len(vectors)
+        print(f"upserted {total}/{len(records)}")
+    return total
+
+
+def upsert_hybrid_chunks(
+    settings: Settings,
+    records: list[dict],
+    encoder: "BM25SparseEncoder",
+    namespace: str,
+    batch_size: int = 96,
+) -> int:
+    from pinecone import Pinecone
+
+    from contractiq.retrieval.factory import get_embeddings
+
+    embeddings = get_embeddings(settings)
+    pc = Pinecone(api_key=settings.pinecone_api_key)
+    index = pc.Index(settings.index_name)
+
+    total = 0
+    for start in range(0, len(records), batch_size):
+        batch = records[start : start + batch_size]
+        dense_batch = embeddings.embed_documents([r["text"] for r in batch])
+        vectors = []
+        for record, values in zip(batch, dense_batch):
+            vector = {
+                "id": record["id"],
+                "values": values,
+                "metadata": sanitize_metadata(record["metadata"]),
+            }
+            sparse = encoder.encode(record["text"])
+            if sparse["indices"]:
+                vector["sparse_values"] = sparse
+            vectors.append(vector)
         index.upsert(vectors=vectors, namespace=namespace)
         total += len(vectors)
         print(f"upserted {total}/{len(records)}")

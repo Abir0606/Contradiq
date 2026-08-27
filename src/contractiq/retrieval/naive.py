@@ -23,14 +23,42 @@ def format_context(docs: list) -> str:
     return "\n\n".join(blocks)
 
 
-def get_rag_chain(settings: Settings):
+def _naive_retriever(settings: Settings, flt: dict | None):
     vectorstore = PineconeVectorStore(
         index_name=settings.index_name,
         embedding=get_embeddings(settings),
         namespace=settings.namespace_baseline,
         pinecone_api_key=settings.pinecone_api_key,
     )
-    retriever = vectorstore.as_retriever(search_kwargs={"k": settings.retrieval_k})
+    search_kwargs: dict = {"k": settings.retrieval_k}
+    if flt:
+        search_kwargs["filter"] = flt
+    return vectorstore.as_retriever(search_kwargs=search_kwargs)
+
+
+def _hybrid_retriever_fn(settings: Settings, flt: dict | None):
+    from contractiq.retrieval.hybrid import HybridRetriever
+
+    retriever = HybridRetriever(settings)
+
+    def retrieve(question: str) -> list:
+        return retriever.retrieve(question, filter_dict=flt)
+
+    return retrieve
+
+
+def get_rag_chain(
+    settings: Settings,
+    mode: str = "naive",
+    flt: dict | None = None,
+):
+    if mode == "hybrid":
+        retrieve_docs = _hybrid_retriever_fn(settings, flt)
+    elif mode == "naive":
+        naive_ret = _naive_retriever(settings, flt)
+        retrieve_docs = lambda q: naive_ret.invoke(q)
+    else:
+        raise ValueError(f"Unknown retrieval mode: {mode}")
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -42,14 +70,14 @@ def get_rag_chain(settings: Settings):
 
     chain = (
         {
-            "context": retriever | RunnableLambda(format_context),
+            "context": RunnableLambda(retrieve_docs) | RunnableLambda(format_context),
             "question": RunnablePassthrough(),
         }
         | prompt
         | llm
         | StrOutputParser()
     )
-    return chain, retriever
+    return chain
 
 
 def answer(chain, question: str) -> dict:

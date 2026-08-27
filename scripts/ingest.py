@@ -3,11 +3,13 @@ import argparse
 from contractiq.config import get_settings
 from contractiq.ingest.chunker import chunk_contract
 from contractiq.ingest.loader import chunk_id, iter_contracts
+from contractiq.ingest.sparse import BM25SparseEncoder, tokenize
 from contractiq.ingest.vectorstore import (
     chunk_record,
     ensure_index,
     reset_namespace,
     upsert_chunks,
+    upsert_hybrid_chunks,
 )
 
 
@@ -15,10 +17,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Ingest CUAD contracts into Pinecone")
     parser.add_argument("--limit", type=int, default=None, help="Max contracts to ingest")
     parser.add_argument("--reset", action="store_true", help="Delete namespace contents first")
+    parser.add_argument(
+        "--hybrid",
+        action="store_true",
+        help="Ingest into the hybrid namespace with dense+BM25 sparse vectors",
+    )
     args = parser.parse_args()
 
     settings = get_settings()
-    namespace = settings.namespace_baseline
+    namespace = settings.namespace_hybrid if args.hybrid else settings.namespace_baseline
 
     ensure_index(settings)
     if args.reset:
@@ -50,7 +57,19 @@ def main() -> None:
         print(f"chunked [{contract_count}]{stem}: {len(chunks)} chunks")
 
     print(f"\ntotal chunks: {len(all_records)} across {contract_count} contracts")
-    upserted = upsert_chunks(settings, all_records, namespace=namespace)
+
+    if args.hybrid:
+        print("fitting BM25 sparse encoder on corpus...")
+        encoder = BM25SparseEncoder()
+        encoder.fit([tokenize(r["text"]) for r in all_records])
+        encoder.save(settings.bm25_artifact)
+        print(f"vocab size: {encoder.vocab_size}, saved to {settings.bm25_artifact}")
+        upserted = upsert_hybrid_chunks(
+            settings, all_records, encoder, namespace=namespace
+        )
+    else:
+        upserted = upsert_chunks(settings, all_records, namespace=namespace)
+
     print(f"done: {upserted} vectors in namespace '{namespace}'")
 
 

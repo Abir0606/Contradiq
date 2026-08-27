@@ -20,8 +20,12 @@ class Settings(BaseSettings):
     index_name: str = "contractiq"
     cloud: str = "aws"
     region: str = "us-east-1"
+    metric: str = "dotproduct"
 
     namespace_baseline: str = "baseline"
+    namespace_hybrid: str = "hybrid-v1"
+
+    bm25_artifact: Path = ROOT_DIR / "artifacts" / "bm25_encoder.json"
 
     embedding_provider: str = "huggingface"
     hf_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"

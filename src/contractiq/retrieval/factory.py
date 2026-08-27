@@ -8,7 +8,10 @@ def get_embeddings(settings: Settings) -> Embeddings:
     if settings.embedding_provider == "huggingface":
         from langchain_huggingface import HuggingFaceEmbeddings
 
-        return HuggingFaceEmbeddings(model_name=settings.hf_embedding_model)
+        return HuggingFaceEmbeddings(
+            model_name=settings.hf_embedding_model,
+            encode_kwargs={"normalize_embeddings": True},
+        )
     if settings.embedding_provider == "openai":
         from langchain_openai import OpenAIEmbeddings
 
