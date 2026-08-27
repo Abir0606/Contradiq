@@ -1,5 +1,6 @@
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 # Load the master clauses CSV — this has one row per contract,
 # with columns for each of the 41 clause categories
