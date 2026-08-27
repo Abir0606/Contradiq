@@ -10,11 +10,21 @@ _STOPWORDS = frozenset(
 _K1 = 1.5
 _B = 0.75
 _MAX_TERMS = 300
+_SUFFIXES = ("ations", "ation", "ments", "ment", "ings", "ing", "edly", "ness", "ed", "es", "ly", "s")
+
+
+def _stem(token: str) -> str:
+    for suffix in _SUFFIXES:
+        if token.endswith(suffix) and len(token) - len(suffix) >= 3:
+            return token[: -len(suffix)]
+    return token
 
 
 def tokenize(text: str) -> list[str]:
     return [
-        tok for tok in _TOKEN_RE.findall(text.lower()) if len(tok) >= 2 and tok not in _STOPWORDS
+        _stem(tok)
+        for tok in _TOKEN_RE.findall(text.lower())
+        if len(tok) >= 2 and tok not in _STOPWORDS
     ]
 
 
@@ -59,10 +69,12 @@ class BM25SparseEncoder:
             score = self.idf[idx] * freq * (_K1 + 1) / (freq + norm)
             scored.append((idx, score))
         scored.sort(key=lambda pair: -pair[1])
-        scored = sorted(scored[:_MAX_TERMS], key=lambda pair: pair[0])
+        scored = scored[:_MAX_TERMS]
+        max_score = max(score for _, score in scored)
+        scaled = [(idx, score / max_score) for idx, score in sorted(scored)]
         return {
-            "indices": [idx for idx, _ in scored],
-            "values": [round(score, 6) for _, score in scored],
+            "indices": [idx for idx, _ in scaled],
+            "values": [round(score, 6) for _, score in scaled],
         }
 
     def save(self, path: Path) -> None:

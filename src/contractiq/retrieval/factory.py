@@ -27,7 +27,12 @@ def get_chat_model(settings: Settings) -> BaseChatModel:
 
         if not settings.groq_api_key:
             raise ValueError("GROQ_API_KEY not set in .env — get a free key at console.groq.com")
-        return ChatGroq(model=settings.chat_model, api_key=settings.groq_api_key, temperature=0)
+        return ChatGroq(
+            model=settings.chat_model,
+            api_key=settings.groq_api_key,
+            temperature=0,
+            max_retries=4,
+        )
     if settings.chat_provider == "openai":
         from langchain_openai import ChatOpenAI
 

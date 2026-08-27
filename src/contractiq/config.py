@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     chunk_overlap_tokens: int = 150
 
     retrieval_k: int = 5
+    agent_retrieval_k: int = 6
+    max_retrieval_retries: int = 2
 
     data_dir: Path = ROOT_DIR / "data" / "raw" / "CUAD_v1"
 
