@@ -1,0 +1,104 @@
+{
+  "advanced": {
+    "mode": "advanced",
+    "n": 8,
+    "accuracy": 0.5,
+    "hit_rate": 0.5,
+    "by_type": {
+      "entity": 0.5,
+      "yes": 1.0,
+      "no": 0.0
+    },
+    "avg_latency": 10.959,
+    "results": [
+      {
+        "id": "yes-000",
+        "question": "Does the BIOAMBERINC_04_10_2013-EX-10.34-DEVELOPMENT AGREEMENT (1) contain an anti-assignment restriction?",
+        "gold": "Yes",
+        "pred": "",
+        "hit": true,
+        "correct": true,
+        "latency_retrieve": 27.685,
+        "latency_gen": 0.0,
+        "answer_type": "yes"
+      },
+      {
+        "id": "yes-001",
+        "question": "Does the 10.1 Supply Agreement contain a exclusivity clause?",
+        "gold": "Yes",
+        "pred": "",
+        "hit": true,
+        "correct": true,
+        "latency_retrieve": 8.415,
+        "latency_gen": 0.0,
+        "answer_type": "yes"
+      },
+      {
+        "id": "entity-002",
+        "question": "What is the document name/title of the file AgapeAtpCorp_20191202_10-KA_EX-10.1_11911128_EX-10.1_Supply Agreement.pdf?",
+        "gold": "ODM SUPPLY AGREEMENT",
+        "pred": "",
+        "hit": true,
+        "correct": true,
+        "latency_retrieve": 8.233,
+        "latency_gen": 0.0,
+        "answer_type": "entity"
+      },
+      {
+        "id": "no-003",
+        "question": "Does the 10.6 Marketing Agreement contain a price restrictions clause?",
+        "gold": "No",
+        "pred": "",
+        "hit": false,
+        "correct": false,
+        "latency_retrieve": 8.117,
+        "latency_gen": 0.0,
+        "answer_type": "no"
+      },
+      {
+        "id": "no-004",
+        "question": "Does the 10.1 Endorsement Agreement contain a covenant not to sue clause?",
+        "gold": "No",
+        "pred": "",
+        "hit": false,
+        "correct": false,
+        "latency_retrieve": 8.207,
+        "latency_gen": 0.0,
+        "answer_type": "no"
+      },
+      {
+        "id": "entity-005",
+        "question": "What is the agreement date for the 10.16 Maintenance Agreement1?",
+        "gold": "11/4/10",
+        "pred": "",
+        "hit": false,
+        "correct": false,
+        "latency_retrieve": 9.293,
+        "latency_gen": 0.0,
+        "answer_type": "entity"
+      },
+      {
+        "id": "yes-006",
+        "question": "Does the 10.32 Content License Agreement contain a post-termination services clause?",
+        "gold": "Yes",
+        "pred": "",
+        "hit": true,
+        "correct": true,
+        "latency_retrieve": 9.063,
+        "latency_gen": 0.0,
+        "answer_type": "yes"
+      },
+      {
+        "id": "no-007",
+        "question": "Does the 10.3 Co-Branding Agreement contain a most favored nation clause?",
+        "gold": "No",
+        "pred": "",
+        "hit": false,
+        "correct": false,
+        "latency_retrieve": 8.662,
+        "latency_gen": 0.0,
+        "answer_type": "no"
+      }
+    ]
+  }
+}
