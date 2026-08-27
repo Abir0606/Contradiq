@@ -52,7 +52,13 @@ def get_rag_chain(
     mode: str = "naive",
     flt: dict | None = None,
 ):
-    if mode == "hybrid":
+    if mode == "advanced":
+        from contractiq.retrieval.advanced import AdvancedRetriever
+
+        def retrieve_docs(q: str) -> list:
+            return AdvancedRetriever(settings).retrieve(q, filter_dict=flt)
+
+    elif mode == "hybrid":
         retrieve_docs = _hybrid_retriever_fn(settings, flt)
     elif mode == "naive":
         naive_ret = _naive_retriever(settings, flt)

@@ -8,3 +8,4 @@ data/raw/
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
+artifacts/

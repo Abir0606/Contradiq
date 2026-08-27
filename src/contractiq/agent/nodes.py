@@ -56,6 +56,24 @@ def respond_general(state, settings: Settings) -> dict:
 
 
 def retrieve_documents(state, settings: Settings, flt: dict | None) -> dict:
+    advanced = settings.enable_reranking or settings.enable_parent_retrieval
+    if advanced:
+        from contractiq.retrieval.advanced import AdvancedRetriever
+
+        retriever = AdvancedRetriever(settings)
+        docs = retriever.retrieve(
+            state["question"], top_k=settings.agent_retrieval_k, filter_dict=flt
+        )
+        mode = []
+        if settings.enable_parent_retrieval:
+            mode.append("parent")
+        if settings.enable_reranking:
+            mode.append("rerank")
+        label = "+".join(mode) if mode else "advanced"
+        return {
+            "documents": docs,
+            "trace": [f"retrieve[advanced:{label}] -> {len(docs)} docs (retry {state['retries']})"],
+        }
     retriever = HybridRetriever(settings)
     docs = retriever.retrieve(
         state["question"], top_k=settings.agent_retrieval_k, filter_dict=flt

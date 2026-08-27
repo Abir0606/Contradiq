@@ -140,3 +140,16 @@ def chunk_contract(
     flush()
 
     return merged
+
+
+def chunk_to_children(
+    text: str,
+    child_size_tokens: int = 400,
+    child_overlap_tokens: int = 50,
+) -> list[str]:
+    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        model_name="gpt-4o-mini",
+        chunk_size=child_size_tokens,
+        chunk_overlap=child_overlap_tokens,
+    )
+    return splitter.split_text(text)

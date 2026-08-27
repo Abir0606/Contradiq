@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 def sanitize_metadata(meta: dict, max_str_len: int = 800) -> dict:
     clean: dict = {}
     for key, value in meta.items():
-        if key == "text":
+        if key in {"text", "parent_text"}:
             clean[key] = value
         elif isinstance(value, str):
             clean[key] = value[:max_str_len]
@@ -130,6 +130,38 @@ def upsert_hybrid_chunks(
     return total
 
 
+def upsert_child_chunks(
+    settings: Settings,
+    records: list[dict],
+    namespace: str,
+    batch_size: int = 96,
+) -> int:
+    from pinecone import Pinecone
+
+    from contractiq.retrieval.factory import get_embeddings
+
+    embeddings = get_embeddings(settings)
+    pc = Pinecone(api_key=settings.pinecone_api_key)
+    index = pc.Index(settings.index_name)
+
+    total = 0
+    for start in range(0, len(records), batch_size):
+        batch = records[start : start + batch_size]
+        vectors_list = embeddings.embed_documents([r["text"] for r in batch])
+        vectors = [
+            {
+                "id": record["id"],
+                "values": values,
+                "metadata": sanitize_metadata(record["metadata"]),
+            }
+            for record, values in zip(batch, vectors_list)
+        ]
+        index.upsert(vectors=vectors, namespace=namespace)
+        total += len(vectors)
+        print(f"upserted {total}/{len(records)}")
+    return total
+
+
 def chunk_record(chunk: Chunk, base_metadata: dict, idx: int) -> dict:
     return {
         "id": f"{base_metadata['chunk_prefix']}-{idx:04d}",
@@ -139,5 +171,28 @@ def chunk_record(chunk: Chunk, base_metadata: dict, idx: int) -> dict:
             **base_metadata,
             "section": chunk.section_breadcrumb,
             "chunk_index": idx,
+        },
+    }
+
+
+def child_record(
+    child_text: str,
+    parent: Chunk,
+    base_metadata: dict,
+    parent_idx: int,
+    child_idx: int,
+) -> dict:
+    parent_id = f"{base_metadata['chunk_prefix']}-{parent_idx:04d}"
+    return {
+        "id": f"{parent_id}-c{child_idx:02d}",
+        "text": child_text,
+        "metadata": {
+            "text": child_text,
+            "parent_text": parent.text,
+            "parent_id": parent_id,
+            "section": parent.section_breadcrumb,
+            "chunk_index": parent_idx,
+            "child_index": child_idx,
+            **base_metadata,
         },
     }

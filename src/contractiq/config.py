@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 
     namespace_baseline: str = "baseline"
     namespace_hybrid: str = "hybrid-v1"
+    namespace_advanced: str = "advanced-v1"
 
     bm25_artifact: Path = ROOT_DIR / "artifacts" / "bm25_encoder.json"
 
@@ -41,6 +42,14 @@ class Settings(BaseSettings):
     retrieval_k: int = 5
     agent_retrieval_k: int = 6
     max_retrieval_retries: int = 2
+
+    enable_reranking: bool = False
+    enable_parent_retrieval: bool = False
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_candidates: int = 20
+    parent_chunk_size_tokens: int = 1200
+    child_chunk_size_tokens: int = 400
+    child_chunk_overlap_tokens: int = 50
 
     data_dir: Path = ROOT_DIR / "data" / "raw" / "CUAD_v1"
 

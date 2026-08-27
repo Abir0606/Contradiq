@@ -35,9 +35,16 @@ def main() -> None:
     parser.add_argument("--type", dest="contract_type", default=None)
     parser.add_argument("--part", default=None)
     parser.add_argument("--clause", dest="clause", default=None)
+    parser.add_argument("--rerank", action="store_true", help="Enable cross-encoder reranking")
+    parser.add_argument("--parent", action="store_true", help="Enable parent-document retrieval")
+    parser.add_argument("--advanced", action="store_true", help="Enable both reranking and parent retrieval")
     args = parser.parse_args()
 
     settings = get_settings()
+    if args.rerank or args.advanced:
+        settings.enable_reranking = True
+    if args.parent or args.advanced:
+        settings.enable_parent_retrieval = True
     flt = build_filter(args.contract_type, args.part, args.clause)
     app = build_graph(settings, flt=flt)
 
